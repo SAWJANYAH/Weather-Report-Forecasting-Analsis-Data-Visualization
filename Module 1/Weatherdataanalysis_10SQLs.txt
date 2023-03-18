@@ -1,0 +1,96 @@
+=========================================
+ SQL Queries on Weather Analysis Dataset
+=========================================
+1. Give the count of the minimum number of days for the time when temperature reduced
+---------------------------------------
+select count(*) as min_days_count from 
+(select Datew, Temperature, LAG(Temperature) over(order by Datew) as prev_temp from weatherdata) 
+ as temp_changes where Temperature < prev_temp;
+***************************************
+2. Find the temperature as Cold / hot by using the case and avg of values of the given data set
+---------------------------------------
+SELECT 
+  CASE 
+    WHEN AVG(Temperature) <= 15 THEN 'Cold'
+    WHEN AVG(Temperature) >= 25 THEN 'Hot'
+    ELSE 'Moderate'
+  END as temperature_category
+FROM weatherdata;
+
+***************************************
+3. Can you check for all 4 consecutive days when the temperature was below 30 Fahrenheit
+---------------------------------------
+SELECT t1.Datew AS start_date
+FROM weatherdata t1
+JOIN weatherdata t2 ON t2.Datew = DATE_ADD(t1.Datew, INTERVAL 1 DAY) 
+JOIN weatherdata t3 ON t3.Datew = DATE_ADD(t1.Datew, INTERVAL 2 DAY)
+JOIN weatherdata t4 ON t4.Datew = DATE_ADD(t1.Datew, INTERVAL 3 DAY)
+WHERE t1.Temperature < 30 AND t2.Temperature < 30 AND t3.Temperature < 30 AND t4.Temperature < 30;
+***************************************
+4. Can you find the maximum number of days for which temperature dropped
+---------------------------------------
+ SELECT MAX(Datew) AS max_consecutive_days
+FROM (
+  SELECT Datew, Temperature,
+         @grp := IF(Temperature - @prev_temp < 0, @grp, @grp + 1) AS grp,
+         @prev_temp := Temperature
+  FROM weatherdata
+  CROSS JOIN (SELECT @grp := 0, @prev_temp := NULL) vars
+  ORDER BY Datew
+) weatherdata
+WHERE Temperature < @prev_temp
+GROUP BY grp;
+***************************************
+5. Can you find the average humidity average from the dataset
+( NOTE:should contain the following clauses: group by, order by, date )
+---------------------------------------
+SELECT Datew, AVG(Avg_humidity) AS avg_humidity
+FROM weatherdata
+GROUP BY Datew
+ORDER BY Datew;
+***************************************
+6. Use the GROUP BY clause on the Date column and make a query to fetch details for average windspeed ( which is now windspeed done in task 3 )
+---------------------------------------
+Select Datew, Avg_windspeed from weatherdata Group by Datew;
+***************************************
+7.Please add the data in the dataset for 2034 and 2035 as well as forecast predictions for these years
+( NOTE:data consistency and uniformity should be maintained )
+---------------------------------------
+@@@@@Solved using "Python"@@@@@
+---------------------------------------
+.py file and Forecast Dataset are included in ZIP folder with files name ending Q7.
+***************************************
+8. If the maximum gust speed increases from 55mph, fetch the details for the next 4 days
+---------------------------------------
+@@@@@Solved using "Python+SQL"@@@@@
+---------------------------------------
+## Get Dates with Mar gustspeed > 55mph
+crsr.execute("select DateW from weatherdata where Max_gustspeed > 55")
+#fetch the records
+result1 = crsr.fetchall()
+#for each date fetched, retrieve details of next 4 days
+for item in result1:
+    print(item[0])
+    sql = "select * from weatherdata where DateW > " + "'" + item[0] + "'" + " limit 4"
+    crsr.execute(sql)
+    resultrec = crsr.fetchall()
+    print (resultrec) 
+***************************************
+9. Find the number of days when the temperature went below 0 degrees Celsius
+---------------------------------------
+select count(*) from Weatherdata where Temperature<0; 
+***************************************
+10. Create another table with a “Foreign key” relation with the existing given data set.
+---------------------------------------
+CREATE TABLE weather_notes (
+  type_id INT PRIMARY KEY,
+  tdate DATE,
+  type TEXT,
+  weather_id VARCHAR(512),
+  FOREIGN KEY (weather_id) REFERENCES weatherdata(Datew)
+);
+***************************************
+
+
+
+
